@@ -1,0 +1,40 @@
+spring:
+  output:
+    ansi:
+      enabled: always
+  application:
+    name: cell-gateway
+  lifecycle:
+    timeout-per-shutdown-phase: 300000
+
+server:
+  port: 8083
+  netty:
+    connection-timeout: 40000
+  shutdown: graceful
+
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - prometheus
+          - beans
+          - endpoints
+  endpoint:
+    health:
+      show-details: always
+
+order.destinations.orderServiceUrl: http://10.6.136.50:31622
+#order.destinations.orderServiceUrl: http://localhost:8080
+#order.destinations.orderServiceUrl: http://127.0.0.1:8080
+#order.destinations.orderServiceUrl: http://10.6.136.48:8098
+
+#logging.level.org.springframework.web: DEBUG
+#logging.level.org.springframework.cloud: DEBUG
+
+logging:
+  level:
+    root: debug
