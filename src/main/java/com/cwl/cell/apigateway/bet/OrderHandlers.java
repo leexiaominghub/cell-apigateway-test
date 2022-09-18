@@ -9,6 +9,8 @@ import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 
+import java.net.InetSocketAddress;
+
 @Service
 @AllArgsConstructor
 @Slf4j
@@ -37,6 +39,11 @@ public class OrderHandlers {
 
     String id = serverRequest.pathVariable("id");
 
+
+    InetSocketAddress remoteAddress = serverRequest.exchange().getRequest().getRemoteAddress();
+    String requestID = serverRequest.exchange().getRequest().getId();
+
+    //log.info("remoteAddr {}, {}", remoteAddress, requestID);
     log.info("lxm: " + id);
 
     return orderService.test2(id)

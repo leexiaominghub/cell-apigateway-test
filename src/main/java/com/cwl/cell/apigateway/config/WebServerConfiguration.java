@@ -1,33 +1,40 @@
 package com.cwl.cell.apigateway.config;
 
 
+import io.netty.util.AttributeKey;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.web.embedded.netty.NettyReactiveWebServerFactory;
+import org.springframework.boot.web.server.ConfigurableWebServerFactory;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
+import org.springframework.stereotype.Component;
+import reactor.netty.ConnectionObserver;
+import reactor.netty.http.server.HttpServerResponse;
+import reactor.netty.http.server.HttpServerState;
 
-//当Spring容器内没有TomcatEmbeddedServletContainerFactory这个bean时，会吧此bean加载进spring容器中
-//@Component
-/*
+import java.time.Duration;
+
+
+@Component
+@Slf4j
 public class WebServerConfiguration implements WebServerFactoryCustomizer<ConfigurableWebServerFactory> {
   @Override
   public void customize(ConfigurableWebServerFactory configurableWebServerFactory) {
-    //使用对应工厂类提供给我们的接口定制化我们的tomcat connector
-    ((NettyReactiveWebServerFactory)configurableWebServerFactory).addServerCustomizers(new NettyServerCustomizer() {
-      @Override
-      public void customize(Connector connector) {
-        Http11NioProtocol protocol = (Http11NioProtocol) connector.getProtocolHandler();
+    ((NettyReactiveWebServerFactory)configurableWebServerFactory).addServerCustomizers(httpServer -> httpServer.childObserve((connection, newState) -> {
+      log.info("lxm " + connection + ": " + newState);
+      if (newState == HttpServerState.REQUEST_RECEIVED) {
+        Integer reqCnt = (Integer)connection.channel().attr(AttributeKey.valueOf("reqCnt")).get();
+        connection.channel().attr(AttributeKey.valueOf("reqCnt")).set(++reqCnt);
 
-        //定制化keepAliveTimeout,设置30秒内没有请求则服务端自动断开keepalive链接
-        protocol.setKeepAliveTimeout(30000);
-        //当客户端发送超过10000个请求则自动断开keepalive链接
-        protocol.setMaxKeepAliveRequests(30);
+        if (reqCnt >= 2) {
+          if (connection instanceof HttpServerResponse)
+            ((HttpServerResponse)connection).keepAlive(false);
+          log.info("lxm " +reqCnt + " cut conn");
+          //connection.markPersistent(false); // 不需要，上面响应close就会自东关闭
+        }
+
+      } else if (newState == ConnectionObserver.State.CONNECTED) {
+        connection.channel().attr(AttributeKey.valueOf("reqCnt")).set(0);
       }
-    });
-  }
-}
-*/
-public class WebServerConfiguration implements WebServerFactoryCustomizer<NettyReactiveWebServerFactory> {
-  @Override
-  public void customize(NettyReactiveWebServerFactory configurableWebServerFactory) {
-    //qconfigurableWebServerFactory.setP
+    }), httpServer -> httpServer.idleTimeout(Duration.ofSeconds(60)));
   }
 }
