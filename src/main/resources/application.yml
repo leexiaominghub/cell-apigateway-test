@@ -27,8 +27,8 @@ management:
     health:
       show-details: always
 
-order.destinations.orderServiceUrl: http://10.6.136.50:31622
-#order.destinations.orderServiceUrl: http://localhost:8080
+#order.destinations.orderServiceUrl: http://10.6.136.50:31622
+order.destinations.orderServiceUrl: http://localhost:8080
 #order.destinations.orderServiceUrl: http://127.0.0.1:8080
 #order.destinations.orderServiceUrl: http://10.6.136.48:8098
 
@@ -38,3 +38,5 @@ order.destinations.orderServiceUrl: http://10.6.136.50:31622
 logging:
   level:
     root: info
+    reactor.netty.resources.PooledConnectionProvider: debug
+    reactor.netty.resources.DefaultPooledConnectionProvider: debug

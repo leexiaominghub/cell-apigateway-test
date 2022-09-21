@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cell-apigateway-service
+  labels:
+    application: cell-apigateway
+    app: cell-apigateway
+spec:
+  type: NodePort
+  ports:
+  - name: httpport
+    port: 8080
+    targetPort: 8083
+    nodePort: 31600
+  selector:
+    svc: cell-apigateway-service

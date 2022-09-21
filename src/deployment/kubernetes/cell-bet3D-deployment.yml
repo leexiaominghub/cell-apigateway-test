@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cell-apigateway
+  labels:
+    application: cell-apigateway
+spec:
+  replicas: 2
+  strategy:
+    rollingUpdate:
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        svc: cell-apigateway-service
+    spec:
+      terminationGracePeriodSeconds: 300
+      containers:
+      - name: cell-apigateway
+        image: cell-apigateway:0.1
+        #resources:
+        #  requests:
+        #    cpu: "800m"
+        #    #memory: "512Mi"
+        #  limits:
+        #    cpu: "800m"
+        #    #memory: "512Mi"
+        #imagePullPolicy: Always
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "echo `date` pod stopping wait 10s > /proc/1/fd/1; sleep 10; echo `date` now stop > /proc/1/fd/1"]
+                #command: ["/bin/sh", "-c", "while [ `netstat -tn | wc -l` -gt 2 ]; do echo `netstat -tn` >/proc/1/fd/1; sleep 3; done; echo done > /proc/1/fd/1"]
+
+        ports:
+        - containerPort: 8083
+          name: httpport
+        #livenessProbe:
+        #  httpGet:
+        #    path: /actuator/health
+        #    port: 8080
+        #  initialDelaySeconds: 40
+        #  periodSeconds: 20
+        #readinessProbe:
+        #  httpGet:
+        #    path: /actuator/health
+        #    port: 8080
+        #  initialDelaySeconds: 40
+        #  periodSeconds: 20
+        env:
+
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+#          - name: JAVA_OPTS
+#            value: "-Dsun.net.inetaddr.ttl=30"
+#          - name: SERVER_PORT
+#            value: "8080"
+
+  selector:
+    matchLabels:
+      svc: cell-apigateway-service
