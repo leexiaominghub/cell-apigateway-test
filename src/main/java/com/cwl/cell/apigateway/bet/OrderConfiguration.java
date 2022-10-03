@@ -12,11 +12,13 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.web.error.ErrorAttributeOptions;
 import org.springframework.boot.web.reactive.error.ErrorAttributes;
 import org.springframework.boot.web.reactive.error.ErrorWebExceptionHandler;
+import org.springframework.cloud.gateway.config.HttpClientProperties;
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.SpringProperties;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -52,6 +54,7 @@ public class OrderConfiguration {
   public RouteLocator orderProxyRouting(RouteLocatorBuilder builder, OrderDestinations orderDestinations) {
     return builder.routes()
             .route(r -> r.path("/3DBet/**").and().method("GET").uri(orderDestinations.getOrderServiceUrl()))
+            .route(r -> r.path("/onlyCloud/**").and().method("GET").uri(orderDestinations.getOrderServiceUrl()))
             .route(r -> r.path("/test/**").and().method("GET").uri(orderDestinations.getOrderServiceUrl()))
             .build();
   }
@@ -59,7 +62,8 @@ public class OrderConfiguration {
   @Bean
   public RouterFunction<ServerResponse> orderHandlerRouting(OrderHandlers orderHandlers) {
     return RouterFunctions.route(GET("/3DBet/bet/{stationID}/{num}/{money}/{orderID}"), orderHandlers::getOrderDetails)
-            .andRoute(GET("/test/bet/{id}"), orderHandlers::test);
+            .andRoute(GET("/test/bet/{id}"), orderHandlers::test)
+            .andRoute(GET("/test/local/{id}"), orderHandlers::testLocal);
   }
 
 /*
@@ -127,7 +131,8 @@ public class OrderConfiguration {
                                                                                            ObjectProvider<ViewResolver> viewResolvers,
                                                                                            ServerCodecConfigurer serverCodecConfigurer,
                                                                                            ServerProperties serverProperties) {
-    CustomizeDefaultErrorWebExceptionHandler exceptionHandler = new CustomizeDefaultErrorWebExceptionHandler(errorAttributes, webProperties.getResources(), serverProperties.getError(), applicationContext);
+    CustomizeDefaultErrorWebExceptionHandler exceptionHandler = new CustomizeDefaultErrorWebExceptionHandler(errorAttributes,
+            webProperties.getResources(), serverProperties.getError(), applicationContext);
     exceptionHandler.setViewResolvers(viewResolvers.orderedStream().collect(Collectors.toList()));
     exceptionHandler.setMessageWriters(serverCodecConfigurer.getWriters());
     exceptionHandler.setMessageReaders(serverCodecConfigurer.getReaders());
@@ -138,8 +143,9 @@ public class OrderConfiguration {
   Optional<ChannelGroup> channelGroup;
   ConnectionPoolMetrics metrics;
   @Bean
-  public WebClient webClient() {
+  public WebClient webClient(HttpClientProperties httpClientProperties, HttpClient httpClient) {
 
+/*
     ConnectionProvider provider =
             ConnectionProvider.builder("custom")
                     .maxConnections(50) // 默认500或CPU个数的2倍。
@@ -147,38 +153,27 @@ public class OrderConfiguration {
                     .maxLifeTime(Duration.ofSeconds(300)) // 默认-1
                     //.pendingAcquireTimeout(Duration.ofSeconds(60)) // 向连接池获取连接的超时时间, 默认45s
                     //.evictInBackground(Duration.ofSeconds(30)) // 应该不会清理server的连接，默认不开启
-                    //.metrics(true, () -> (poolName, id, remoteAddress, metrics) -> {
-                      //log.info("lxm metric alc: " + metrics.allocatedSize() + " idle: " + metrics.idleSize() + " pending: " + metrics.pendingAcquireSize() + " acq: " + metrics.acquiredSize());
-                      //this.metrics = metrics; })
+                    .metrics(true, () -> (poolName, id, remoteAddress, metrics) -> {
+                      log.info("lxm metric alc: " + metrics.allocatedSize() + " idle: " + metrics.idleSize() + " pending: " + metrics.pendingAcquireSize() + " acq: " + metrics.acquiredSize());
+                      this.metrics = metrics; })
                     .build();
 
     HttpClient client = HttpClient.create(provider) // 优雅退出可能并不需要等待httpclient控制的连接
             //.doOnConnect(httpClientConfig -> this.channelGroup = Optional.ofNullable(httpClientConfig.channelGroup())) // 还是null
             //.doOnDisconnected(connection -> log.info("disconnect " +connection)) // 其实只是释放连接，并不是真的断开连接
-            .responseTimeout(Duration.ofSeconds(9)) // 默认无限等待，官档说最佳实践是配置
             //.disableRetry(true) // 只针对连接失效的重试
-            .doOnResponseError(((httpClientResponse, throwable) -> log.warn("" + httpClientResponse + "" + throwable)))
+            //.responseTimeout(Duration.ofSeconds(9)) // 默认无限等待，官档说最佳实践是配置
+            .responseTimeout(httpClientProperties.getResponseTimeout()) // 默认无限等待，官档说最佳实践是配置
             .observe((connection, newState) -> { // httpclient 只负责取用连接
               log.info("lxm " + connection + ": " + newState);
-              //log.info("lxm metric alc: " + metrics.allocatedSize() + " idle: " + metrics.idleSize() + " pending: " + metrics.pendingAcquireSize() + " acq: " + metrics.acquiredSize());
+              log.info("lxm metric alc: " + metrics.allocatedSize() + " idle: " + metrics.idleSize() + " pending: " + metrics.pendingAcquireSize() + " acq: " + metrics.acquiredSize());
 
-/*
-        if (running) { // do nothing
-          if (newState == HttpServerState.REQUEST_RECEIVED) { // 如果能通过其他方式约定，则可以省略
-            ((HttpServerResponse)connection).addHeader(KEEP_ALIVE, "timeout=" + idleTimeout.getSeconds());
-          }
-
-          return;
-        }
-
-        if (newState == HttpServerState.REQUEST_RECEIVED) {
-          ((HttpServerResponse)connection).keepAlive(false);
-        }
-*/
-            });
-
+            //});
     return WebClient.builder().clientConnector(new ReactorClientHttpConnector(client)).build();
+*/
+
 
     //return WebClient.create();
+    return WebClient.builder().clientConnector(new ReactorClientHttpConnector(httpClient)).build();
   }
 }

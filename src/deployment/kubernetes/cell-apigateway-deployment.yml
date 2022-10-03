@@ -15,6 +15,10 @@ spec:
         svc: cell-apigateway-service
     spec:
       terminationGracePeriodSeconds: 300
+      #securityContext:
+        #sysctls:
+          #- name: net.core.somaxconn
+            #value: "65535"
       containers:
       - name: cell-apigateway
         image: cell-apigateway:0.1
@@ -53,6 +57,8 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name
+          - name: LOGGING_LEVEL_ROOT
+            value: info
 #          - name: JAVA_OPTS
 #            value: "-Dsun.net.inetaddr.ttl=30"
 #          - name: SERVER_PORT

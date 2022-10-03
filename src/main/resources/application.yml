@@ -6,6 +6,11 @@ spring:
     name: cell-gateway
   lifecycle:
     timeout-per-shutdown-phase: 300000
+  cloud:
+    gateway:
+      httpclient:
+        pool:
+          type: fixed
 
 server:
   port: 8083
@@ -38,5 +43,5 @@ order.destinations.orderServiceUrl: http://localhost:8080
 logging:
   level:
     root: info
-    reactor.netty.resources.PooledConnectionProvider: debug
-    reactor.netty.resources.DefaultPooledConnectionProvider: debug
+    #reactor.netty.resources.PooledConnectionProvider: debug
+    #reactor.netty.resources.DefaultPooledConnectionProvider: debug
